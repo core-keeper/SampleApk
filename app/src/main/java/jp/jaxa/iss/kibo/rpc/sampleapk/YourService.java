@@ -47,16 +47,16 @@ public class YourService extends KiboRpcService {
             v = new Vector(kinematics.getLinearVelocity());
             a = new Vector(kinematics.getLinearAcceleration());
             w = new Vector(kinematics.getAngularVelocity());
-            Log.i("jerry", "v: " + v + ", a: " + a + ", w: " + w);
+            Log.i("timcsy", "v: " + v + ", a: " + a + ", w: " + w);
             frame = errorRobotFrame.absolute(kinematics);
             errorMoveToFrame = frame.relative(worldFrame);
-            Log.i("jerry", "p: " + errorMoveToFrame.getPosition() + ", o: " + errorMoveToFrame.getOrientation());
+            Log.i("timcsy", "p: " + errorMoveToFrame.getPosition() + ", o: " + errorMoveToFrame.getOrientation());
             api.moveTo(worldFrame.getPosition(), worldFrame.getOrientation(), true);
         } while (v.norm() > 0.002 || a.norm() > 0.002 || w.norm() > 0.002);
 
         long endTime = System.currentTimeMillis();
 
-        Log.i("jerry_time", "time: " + (endTime - startTime) / 1000 + " seconds.");
+        Log.i("timcsy_time", "time: " + (endTime - startTime) / 1000 + " seconds.");
 
         for (int i = 0; i < 100; i++) {
             frame = errorMoveToFrame.absolute(worldFrame);
@@ -64,8 +64,8 @@ public class YourService extends KiboRpcService {
 
             kinematics = api.getRobotKinematics();
             Frame deltaFrame = errorMoveToFrame.absolute(kinematics).relative(worldFrame);
-            Log.i("jerry", "v: " + kinematics.getLinearVelocity() + ", a: " + kinematics.getLinearAcceleration() + ", w: " + kinematics.getAngularVelocity());
-            Log.i("jerry", "p: " + deltaFrame.getPosition() + ", o: " + deltaFrame.getOrientation());
+            Log.i("timcsy", "v: " + kinematics.getLinearVelocity() + ", a: " + kinematics.getLinearAcceleration() + ", w: " + kinematics.getAngularVelocity());
+            Log.i("timcsy", "p: " + deltaFrame.getPosition() + ", o: " + deltaFrame.getOrientation());
         }
 
         kinematics = api.getRobotKinematics();
