@@ -1,9 +1,11 @@
 package jp.jaxa.iss.kibo.rpc.sampleapk;
 
+import android.annotation.SuppressLint;
+
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Vec3d;
 
-public class Vector extends gov.nasa.arc.astrobee.types.Point {
+public class Vector extends Point implements PIDValue<Vector> {
     public Vector(double x, double y, double z) {
         super(x, y, z);
     }
@@ -16,8 +18,38 @@ public class Vector extends gov.nasa.arc.astrobee.types.Point {
         this(p.toArray()[0], p.toArray()[1], p.toArray()[2]);
     }
 
-    public Vector scale(double k) {
-        return new Vector(k * getX(), k * getY(), k * getZ());
+    // --- PIDValue 介面實作開始 ---
+
+    @Override
+    public Vector identity() {
+        return new Vector(0, 0, 0);
+    }
+
+    @Override
+    public double magnitude() {
+        return norm();
+    }
+
+    @Override
+    public Vector gain(double rate) {
+        return mul(rate);
+    }
+
+    @Override
+    public Vector absolute(Vector target) {
+        return add(target);
+    }
+
+    @Override
+    public Vector relative(Vector origin) {
+        return sub(origin);
+    }
+
+    // --- PIDValue 介面實作結束 ---
+
+    public Vector mul(double scalar) {
+        // 純量乘法
+        return new Vector(scalar * getX(), scalar * getY(), scalar * getZ());
     }
 
     public Vector inv() {
@@ -49,7 +81,13 @@ public class Vector extends gov.nasa.arc.astrobee.types.Point {
     }
 
     public Vector normalize() {
-        double lenth = norm();
-        return lenth == 0 ? new Vector(0, 0, 0) : scale(1.0 / lenth);
+        double length = norm();
+        return length == 0 ? new Vector(0, 0, 0) : mul(1.0 / length);
+    }
+
+    @SuppressLint("DefaultLocale")
+    @Override
+    public String toString() {
+        return String.format("Vector[x=%.3f, y=%.3f, z=%.3f]", getX(), getY(), getZ());
     }
 }
