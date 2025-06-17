@@ -1,17 +1,12 @@
 package jp.jaxa.iss.kibo.rpc.sampleapk;
 
-import android.provider.ContactsContract;
+import android.text.LoginFilter;
 import android.util.Log;
 
 import gov.nasa.arc.astrobee.Kinematics;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
-import gov.nasa.arc.astrobee.types.Point;
-import gov.nasa.arc.astrobee.types.Quaternion;
-
 import org.opencv.core.Mat;
-
-import java.util.Observer;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee.
@@ -19,13 +14,14 @@ import java.util.Observer;
 
 public class YourService extends KiboRpcService {
     @Override
-    protected void runPlan1(){
-        long startTime = System.currentTimeMillis();
-
+    protected void runPlan1() {
         Kinematics kinematics;
         Vector position;
         Quater orientation;
         Frame frame;
+
+        PIDController<Vector> posPID = new PIDController<Vector>(5.0, 0.01, 0.0);
+        PIDController<Quater> oriPID = new PIDController<Quater>(5.0, 0.01, 0.0);
 
         // 世界座標
         Frame worldFrame = new Frame(
@@ -33,40 +29,57 @@ public class YourService extends KiboRpcService {
             new Quater(1,0,0,0)
         );
 
+        Frame anchorFrame = new Frame(
+            new Vector(10.925, -9.806, 4.945),
+            new Quater(0,0,0,1)
+        );
+
+        Frame testFrame = new Frame(
+            new Vector(11.143, -6.7607, 4.9654),
+            new Quater(0,0,0.707f,0.707f)
+        );
+
+        Log.i("timcsy_before", "before: " + new Frame(api));
+
         // The mission starts.
         api.startMission();
 
-        // 校正機器感知座標用（相對於世界座標）
-        Frame errorRobotFrame = worldFrame.relative(api.getRobotKinematics());
-        // 校正機器移動座標用（相對於世界座標）
-        Frame errorMoveToFrame;
+        Log.i("timcsy_start", "start: " + new Frame(api));
 
-        Vector v, a, w;
-        do {
+        long startTime = System.currentTimeMillis();
+
+        Frame robotFrame = new Frame();
+        for (int i = 0; i < 7; i++) {
+            anchorFrame.moveTo(api, true);
+            robotFrame = robotFrame.absolute(api);
+
             kinematics = api.getRobotKinematics();
+            Vector v, a, w;
             v = new Vector(kinematics.getLinearVelocity());
             a = new Vector(kinematics.getLinearAcceleration());
             w = new Vector(kinematics.getAngularVelocity());
             Log.i("timcsy", "v: " + v + ", a: " + a + ", w: " + w);
-            frame = errorRobotFrame.absolute(kinematics);
-            errorMoveToFrame = frame.relative(worldFrame);
-            Log.i("timcsy", "p: " + errorMoveToFrame.getPosition() + ", o: " + errorMoveToFrame.getOrientation());
-            api.moveTo(worldFrame.getPosition(), worldFrame.getOrientation(), true);
-        } while (v.norm() > 0.002 || a.norm() > 0.002 || w.norm() > 0.002);
+            Log.i("timcsy", "anchoring: " + new Frame(api));
+        }
+        robotFrame = robotFrame.gain(1.0 / 7);
 
         long endTime = System.currentTimeMillis();
-
         Log.i("timcsy_time", "time: " + (endTime - startTime) / 1000 + " seconds.");
 
-        for (int i = 0; i < 100; i++) {
-            frame = errorMoveToFrame.absolute(worldFrame);
-            api.moveTo(frame.getPosition(), frame.getOrientation(), true);
+        Log.i("timcsy_after", "anchor_world: " + anchorFrame);
+        Log.i("timcsy_after", "anchored_robot: " + robotFrame);
+        Log.i("timcsy_after", "anchored_error: " + robotFrame.relative(anchorFrame));
+        Log.i("timcsy_after", "robot_current: " + new Frame(api));
 
-            kinematics = api.getRobotKinematics();
-            Frame deltaFrame = errorMoveToFrame.absolute(kinematics).relative(worldFrame);
-            Log.i("timcsy", "v: " + kinematics.getLinearVelocity() + ", a: " + kinematics.getLinearAcceleration() + ", w: " + kinematics.getAngularVelocity());
-            Log.i("timcsy", "p: " + deltaFrame.getPosition() + ", o: " + deltaFrame.getOrientation());
-        }
+        // 校正機器感知座標用（相對於世界座標）
+//        worldFrame.moveTo(api, true);
+//        Frame errorRobotFrame = worldFrame.relative(api);
+        // 校正機器移動座標用（相對於世界座標）
+//        Frame errorFrame;
+//        posPID.setSetpoint(testFrame.getPosition());
+//        oriPID.setSetpoint(testFrame.getOrientation());
+
+
 
         kinematics = api.getRobotKinematics();
         Log.i("jerry", "x: " + kinematics.getPosition() + ", r: " + kinematics.getOrientation());
