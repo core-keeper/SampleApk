@@ -4,8 +4,7 @@ import android.util.Log;
 
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
-import org.opencv.core.Mat;
-
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,13 +14,18 @@ import java.util.Map;
  */
 
 public class YourService extends KiboRpcService {
+    // 座標系們
+    Map<String, Frame> frames;
+    ObjectDetector objectDetector;
+
     @Override
     protected void runPlan1() {
         Frame frame;
         Image image;
+        objectDetector = new VanillaObjectDetector(this);
 
         // 座標系對應
-        Map<String, Frame> frames = new HashMap<>();
+        frames = new HashMap<>();
         // area1: 區域1 - 區域正中心、機器人要面向區域的方向
         frames.put("area1", new Frame(new Vector(10.950d, -10.580d, 5.195d), new Quater(0f,0f,-0.707f,0.707f)));
         // axis1: 軸向1 - 區域的法單位向量，代表機器人要加上這方向才能相對於區域後退
@@ -70,49 +74,10 @@ public class YourService extends KiboRpcService {
         image = Image.undistort(api);
         image.save("start.png");
 
-        frame = frames.get("area1").absolute(frames.get("axis1").gain(1.0));
-        frame.moveTo(api, false);
-        for (int i = 0; i < 3; i++) {
-            frame = Image.anchor(api, frames.get("axis1"), "area1");
-        }
-        frame.absolute(frames.get("axis1").gain(-0.5));
-        image = Image.undistort(api);
-        image.save("area1.png");
-        image = image.correctA4Paper("area1");
-        if (image != null) image.save("area1_crop.png");
-
-        frame = frames.get("area2").absolute(frames.get("axis2").gain(1.0));
-        frame.moveTo(api, false);
-        for (int i = 0; i < 3; i++) {
-            frame = Image.anchor(api, frames.get("axis2"), "area2");
-        }
-        frame.absolute(frames.get("axis2").gain(-0.5));
-        image = Image.undistort(api);
-        image.save("area2.png");
-        image = image.correctA4Paper("area2");
-        if (image != null) image.save("area2_crop.png");
-
-        frame = frames.get("area3").absolute(frames.get("axis3").gain(1.0));
-        frame.moveTo(api, false);
-        for (int i = 0; i < 3; i++) {
-            frame = Image.anchor(api, frames.get("axis3"), "area3");
-        }
-        frame.absolute(frames.get("axis3").gain(-0.5));
-        image = Image.undistort(api);
-        image.save("area3.png");
-        image = image.correctA4Paper("area3");
-        if (image != null) image.save("area3_crop.png");
-
-        frame = frames.get("area4").absolute(frames.get("axis4").gain(1.0));
-        frame.moveTo(api, false);
-        for (int i = 0; i < 3; i++) {
-            frame = Image.anchor(api, frames.get("axis4"), "area4");
-        }
-        frame.absolute(frames.get("axis4").gain(-0.5));
-        image = Image.undistort(api);
-        image.save("area4.png");
-        image = image.correctA4Paper("area4");
-        if (image != null) image.save("area4_crop.png");
+        round(1);
+        round(2);
+        round(3);
+        round(4);
 
         /* ******************************************************************************** */
         /* Write your code to recognize the type and number of landmark items in each area! */
@@ -139,7 +104,7 @@ public class YourService extends KiboRpcService {
         for (ArucoResult aruco: arucos) {
             Log.i("aruco", aruco.toString());
         }
-        image = image.correctA4Paper("astronaut");
+        image = image.crop("astronaut");
         if (image != null) image.save("astronaut_crop.png");
 
         /* ***************************************************************** */
@@ -170,5 +135,47 @@ public class YourService extends KiboRpcService {
     // You can add your method.
     private String yourMethod(){
         return "your method";
+    }
+
+    void round(int areaId) {
+        String area = "area" + areaId;
+        String axis = "axis" + areaId;
+
+        Frame frame = frames.get(area).absolute(frames.get(axis).gain(1.0));
+        frame.moveTo(api, false);
+        frame = Image.anchor(api, frames.get(axis), area, 3);
+        Frame location = frame.absolute(frames.get(axis).gain(-0.3));
+        location.moveTo(api, true);
+        Image image = Image.undistort(api);
+        image.save(area + ".png");
+        ArucoResult arucoResult = image.aruco(area);
+        Image paper = image.correctA4Paper(area);
+        Image region = image.crop(area);
+        if (region != null) region.save(area + "_crop.png");
+
+        List<ItemInfo> items = new ArrayList<>();
+        try {
+            // 步驟 1: 執行檢測並取得結果 Map
+            items = objectDetector.detect(image.getMatImage());
+
+            // 步驟 2: 顯示結果
+            if (items != null && !items.isEmpty()) {
+                StringBuilder resultBuilder = new StringBuilder("檢測結果:\n");
+                for (ItemInfo item: items) {
+                    resultBuilder.append(item.getName()).append(": ").append(item.getNumber()).append(" 個\n");
+                    if (!item.getName().equals("crystal") && !item.getName().equals("diamond") && !item.getName().equals("emerald")) {
+                        api.setAreaInfo(areaId, item.getName(), item.getNumber());
+                    }
+                }
+                Log.i("Object_Detection", resultBuilder.toString());
+            } else {
+                Log.i("Object_Detection", "未檢測到物件。");
+            }
+
+        } catch (Exception e) {
+            Log.e("Object_Detection", "檢測過程發生錯誤: " + e.getMessage(), e);
+        }
+
+        AreaInfo areaInfo = new AreaInfo(areaId, location, region, paper, arucoResult, items);
     }
 }
