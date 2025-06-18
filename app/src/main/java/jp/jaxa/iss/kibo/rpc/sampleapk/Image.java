@@ -33,6 +33,10 @@ public class Image extends Mat {
         this(api.getMatNavCam(), api);
     }
 
+    public Mat getMatImage() {
+        return image;
+    }
+
     public static Image undistort(KiboRpcApi api) {
         Mat image = api.getMatNavCam();
 
