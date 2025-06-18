@@ -70,28 +70,48 @@ public class YourService extends KiboRpcService {
         image = Image.undistort(api);
         image.save("start.png");
 
-        frames.get("area1").absolute(frames.get("axis1").gain(1.0)).moveTo(api, false);
+        frame = frames.get("area1").absolute(frames.get("axis1").gain(1.0));
+        frame.moveTo(api, false);
+        for (int i = 0; i < 3; i++) {
+            frame = Image.anchor(api, frames.get("axis1"), "area1");
+        }
+        frame.absolute(frames.get("axis1").gain(-0.5));
         image = Image.undistort(api);
         image.save("area1.png");
-        image = image.crop();
+        image = image.correctA4Paper("area1");
         if (image != null) image.save("area1_crop.png");
 
-        frames.get("area2").absolute(frames.get("axis2").gain(1.0)).moveTo(api, false);
+        frame = frames.get("area2").absolute(frames.get("axis2").gain(1.0));
+        frame.moveTo(api, false);
+        for (int i = 0; i < 3; i++) {
+            frame = Image.anchor(api, frames.get("axis2"), "area2");
+        }
+        frame.absolute(frames.get("axis2").gain(-0.5));
         image = Image.undistort(api);
         image.save("area2.png");
-        image = image.crop();
+        image = image.correctA4Paper("area2");
         if (image != null) image.save("area2_crop.png");
 
-        frames.get("area3").absolute(frames.get("axis3").gain(1.0)).moveTo(api, false);
+        frame = frames.get("area3").absolute(frames.get("axis3").gain(1.0));
+        frame.moveTo(api, false);
+        for (int i = 0; i < 3; i++) {
+            frame = Image.anchor(api, frames.get("axis3"), "area3");
+        }
+        frame.absolute(frames.get("axis3").gain(-0.5));
         image = Image.undistort(api);
         image.save("area3.png");
-        image = image.crop();
+        image = image.correctA4Paper("area3");
         if (image != null) image.save("area3_crop.png");
 
-        frames.get("area4").absolute(frames.get("axis4").gain(1.0)).moveTo(api, false);
+        frame = frames.get("area4").absolute(frames.get("axis4").gain(1.0));
+        frame.moveTo(api, false);
+        for (int i = 0; i < 3; i++) {
+            frame = Image.anchor(api, frames.get("axis4"), "area4");
+        }
+        frame.absolute(frames.get("axis4").gain(-0.5));
         image = Image.undistort(api);
         image.save("area4.png");
-        image = image.crop();
+        image = image.correctA4Paper("area4");
         if (image != null) image.save("area4_crop.png");
 
         /* ******************************************************************************** */
@@ -119,7 +139,7 @@ public class YourService extends KiboRpcService {
         for (ArucoResult aruco: arucos) {
             Log.i("aruco", aruco.toString());
         }
-        image = image.crop();
+        image = image.correctA4Paper("astronaut");
         if (image != null) image.save("astronaut_crop.png");
 
         /* ***************************************************************** */
