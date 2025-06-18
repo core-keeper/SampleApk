@@ -1,5 +1,7 @@
 package jp.jaxa.iss.kibo.rpc.sampleapk;
 
+import android.util.Log;
+
 import gov.nasa.arc.astrobee.Kinematics;
 import gov.nasa.arc.astrobee.Result;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcApi;
@@ -77,6 +79,39 @@ public class Frame {
     public Result relativeMoveTo(KiboRpcApi api, boolean printRobotPosition) {
         // relative position, absolute orientation
         return api.relativeMoveTo(position, orientation, printRobotPosition);
+    }
+
+    public Frame anchor(KiboRpcApi api, int frequency) {
+        Log.i("anchor", "start: " + new Frame(api));
+
+        long startTime = System.currentTimeMillis();
+
+        Frame robotFrame = new Frame();
+        for (int i = 0; i < frequency; i++) {
+            moveTo(api, true);
+            robotFrame = robotFrame.absolute(api);
+
+            Kinematics kinematics = api.getRobotKinematics();
+            Vector v, a, w;
+            v = new Vector(kinematics.getLinearVelocity());
+            a = new Vector(kinematics.getLinearAcceleration());
+            w = new Vector(kinematics.getAngularVelocity());
+            Log.i("anchor", "v: " + v + ", a: " + a + ", w: " + w);
+            Log.i("anchor", "anchoring: " + new Frame(api));
+        }
+        robotFrame = robotFrame.gain(1.0 / frequency);
+
+        long endTime = System.currentTimeMillis();
+        Log.i("anchor", "used_time: " + (endTime - startTime) / 1000 + " seconds.");
+
+        Log.i("anchor", "anchor_target: " + this);
+        Log.i("anchor", "anchored_robot: " + robotFrame);
+
+        Frame errorFrame = relative(robotFrame);
+        Log.i("anchor", "anchored_error: " + errorFrame);
+        Log.i("anchor", "robot_current: " + new Frame(api));
+
+        return errorFrame;
     }
 
     @Override
