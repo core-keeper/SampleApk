@@ -22,7 +22,7 @@ public class YourService extends KiboRpcService {
     protected void runPlan1() {
         Frame frame;
         Image image;
-        objectDetector = new ORBObjectDetector(this);
+        objectDetector = new YOLOSharedObjectDetector(this);
 
         // 座標系對應
         frames = new HashMap<>();
@@ -93,34 +93,23 @@ public class YourService extends KiboRpcService {
         /* ************************************************ */
 
         // When you move to the front of the astronaut, report the rounding completion.
-        frames.get("astronaut").moveTo(api, false);
-        Log.i("ccsh", "astronaut: " + new Frame(api));
-        api.reportRoundingCompletion();
-
-        frames.get("astronaut").anchor(api, 10);
-
-        image = Image.undistort(api);
-        image.save("astronaut.png");
-        List<ArucoResult> arucos = image.aruco();
-        for (ArucoResult aruco: arucos) {
-            Log.i("aruco", aruco.toString());
-        }
-        image = image.crop("astronaut");
-        if (image != null) image.save("astronaut_crop.png");
+        ItemInfo targetItem = astronaut();
 
         /* ***************************************************************** */
         /* Write your code to recognize which target item the astronaut has. */
         /* ***************************************************************** */
 
         // Let's notify the astronaut when you recognize it.
-        api.notifyRecognitionItem();
+        // api.notifyRecognitionItem();
 
         /* ******************************************************************************************************* */
         /* Write your code to move Astrobee to the location of the target item (what the astronaut is looking for) */
         /* ******************************************************************************************************* */
 
         // Take a snapshot of the target item.
-        api.takeTargetItemSnapshot();
+        // api.takeTargetItemSnapshot();
+
+        findTarget(areaInfos, targetItem);
     }
 
     @Override
@@ -145,8 +134,7 @@ public class YourService extends KiboRpcService {
         Frame frame = frames.get(area).absolute(frames.get(axis).gain(1.0));
         frame.moveTo(api, false);
         frame = Image.anchor(api, frames.get(axis), area, 3);
-        Frame location = frame.absolute(frames.get(axis).gain(-0.3));
-        location.moveTo(api, true);
+        Frame location = frame.absolute(frames.get(axis).gain(-0.3)); // 儲存距離 0.7m 的位置，之後就不用調了
         Image image = Image.undistort(api);
         image.save(area + ".png");
         ArucoResult arucoResult = image.aruco(area);
@@ -157,7 +145,7 @@ public class YourService extends KiboRpcService {
         List<ItemInfo> items = new ArrayList<>();
         try {
             // 步驟 1: 執行檢測並取得結果 Map
-            items = objectDetector.detect(image.getMatImage());
+            items = objectDetector.detect(region.getMatImage(), "lost");
 
             // 步驟 2: 顯示結果
             if (items != null && !items.isEmpty()) {
@@ -178,5 +166,70 @@ public class YourService extends KiboRpcService {
         }
 
         return new AreaInfo(areaId, location, region, paper, arucoResult, items);
+    }
+
+    ItemInfo astronaut() {
+        try {
+            // When you move to the front of the astronaut, report the rounding completion.
+            frames.get("astronaut").moveTo(api, false);
+            Log.i("ccsh", "astronaut: " + new Frame(api));
+            api.reportRoundingCompletion();
+
+            frames.get("astronaut").anchor(api, 10); // wait for about 10 seconds
+
+            Image image = Image.undistort(api);
+            image.save("astronaut.png");
+            Image region = image.crop("astronaut");
+            if (region != null) region.save("astronaut_crop.png");
+
+            ItemInfo targetItem = null;
+            List<ItemInfo> items = objectDetector.detect(region.getMatImage(), "target");
+            if (items != null && !items.isEmpty()) {
+                StringBuilder resultBuilder = new StringBuilder("檢測結果:\n");
+                for (ItemInfo item: items) {
+                    resultBuilder.append(item.getName()).append(": ").append(item.getNumber()).append(" 個\n");
+                    if (item.getName().equals("crystal") || item.getName().equals("diamond") || item.getName().equals("emerald")) {
+                        targetItem = item;
+                        break;
+                    }
+                }
+                Log.i("Object_Detection", resultBuilder.toString());
+            } else {
+                Log.i("Object_Detection", "未檢測到物件。");
+            }
+
+            return targetItem;
+
+        } catch (Exception e) {
+            Log.e("Astronaut", "太空人發生錯誤: " + e.getMessage(), e);
+        }
+
+        return null;
+    }
+
+    void findTarget(List<AreaInfo> areaInfos, ItemInfo targetItem) {
+        if (targetItem == null) return;
+
+        AreaInfo targetArea = null;
+        for (AreaInfo areaInfo: areaInfos) {
+            for (ItemInfo item: areaInfo.getItems()) {
+                if (item.getName().equals(targetItem.getName())) {
+                    targetArea = areaInfo;
+                    break;
+                }
+            }
+        }
+
+        if (targetArea != null) {
+            targetArea.getLocation().moveTo(api, true);
+
+            // Let's notify the astronaut when you recognize it.
+            api.notifyRecognitionItem();
+
+            // Take a snapshot of the target item.
+            Image image = Image.undistort(api);
+            image.save("target.png");
+            api.takeTargetItemSnapshot();
+        }
     }
 }

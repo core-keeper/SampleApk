@@ -77,7 +77,7 @@ public class VanillaObjectDetector extends ObjectDetector {
     }
 
     @Override
-    public List<ItemInfo> detect(Mat inputMat) {
+    public List<ItemInfo> detect(Mat inputMat, String imageType) {
         List<ItemInfo> items = new ArrayList<>();
 
         // Number of matches for each template
