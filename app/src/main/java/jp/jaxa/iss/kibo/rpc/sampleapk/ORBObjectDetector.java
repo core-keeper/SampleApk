@@ -139,7 +139,7 @@ public class ORBObjectDetector extends ObjectDetector {
      * @return 偵測到的物件資訊列表。
      */
     @Override
-    public List<ItemInfo> detect(Mat inputMat) {
+    public List<ItemInfo> detect(Mat inputMat, String imageType) {
         List<ItemInfo> items = new ArrayList<>();
 
         // 檢查輸入圖像是否有效

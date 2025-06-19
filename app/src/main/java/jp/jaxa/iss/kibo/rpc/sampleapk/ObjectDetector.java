@@ -5,5 +5,5 @@ import org.opencv.core.Mat;
 import java.util.List;
 
 public abstract class ObjectDetector {
-    public abstract List<ItemInfo> detect(Mat inputMat);
+    public abstract List<ItemInfo> detect(Mat inputMat, String imageType);
 }

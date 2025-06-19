@@ -145,10 +145,11 @@ public class YOLODetectionService {
     /**
      * Compatibility method for existing code that expects simple class counts
      * @param image OpenCV Mat image
+     * @param imageType "lost" or "target"
      * @return Map of class ID to count using "lost" detection logic
      */
-    public Map<Integer, Integer> getItemCounts(Mat image) {
-        EnhancedDetectionResult result = DetectfromcvImage(image, "lost");
+    public Map<Integer, Integer> getItemCounts(Mat image, String imageType) {
+        EnhancedDetectionResult result = DetectfromcvImage(image, imageType);
         return result.getAllQuantities();
     }
 

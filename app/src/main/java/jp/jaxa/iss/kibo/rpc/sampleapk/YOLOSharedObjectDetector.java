@@ -18,11 +18,11 @@ public class YOLOSharedObjectDetector extends ObjectDetector {
     }
 
     @Override
-    public List<ItemInfo> detect(Mat inputMat) {
+    public List<ItemInfo> detect(Mat inputMat, String imageType) {
         List<ItemInfo> items = new ArrayList<>();
 
         Mat resizedMat = resizeMat(inputMat, 320, 320, Imgproc.INTER_CUBIC);
-        Map<Integer, Integer> resultItems = yoloService.getItemCounts(resizedMat);
+        Map<Integer, Integer> resultItems = yoloService.getItemCounts(resizedMat, imageType);
         for (Map.Entry<Integer, Integer> entry : resultItems.entrySet()) {
             items.add(new ItemInfo(yoloService.getClassName(entry.getKey()), entry.getValue()));
         }
