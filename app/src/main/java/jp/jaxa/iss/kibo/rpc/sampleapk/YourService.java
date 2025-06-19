@@ -22,7 +22,7 @@ public class YourService extends KiboRpcService {
     protected void runPlan1() {
         Frame frame;
         Image image;
-        objectDetector = new ORBObjectDetector(this);
+        objectDetector = new YOLOSharedObjectDetector(this);
 
         // 座標系對應
         frames = new HashMap<>();
@@ -157,7 +157,7 @@ public class YourService extends KiboRpcService {
         List<ItemInfo> items = new ArrayList<>();
         try {
             // 步驟 1: 執行檢測並取得結果 Map
-            items = objectDetector.detect(image.getMatImage());
+            items = objectDetector.detect(region.getMatImage());
 
             // 步驟 2: 顯示結果
             if (items != null && !items.isEmpty()) {

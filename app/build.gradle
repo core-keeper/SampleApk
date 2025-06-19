@@ -4,6 +4,12 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 26
     buildToolsVersion "28.0.3"
+    // Add this block
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     defaultConfig {
         applicationId "jp.jaxa.iss.kibo.rpc.sampleapk" +
                 ""
@@ -34,6 +40,9 @@ android {
         exclude 'META-INF/license.txt'
         exclude 'META-INF/dependencies.txt'
         exclude 'META-INF/LGPL2.1'
+        // Add these for ONNX Runtime
+        pickFirst '**/libc++_shared.so'
+        pickFirst '**/libjsc.so'
     }
 }
 
@@ -52,4 +61,5 @@ dependencies {
         exclude group: 'junit'
     }
     implementation 'com.quickbirdstudios:opencv-contrib:4.5.3.0'
+    implementation 'com.microsoft.onnxruntime:onnxruntime-android:1.15.1'
 }
