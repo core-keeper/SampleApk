@@ -22,7 +22,7 @@ public class YourService extends KiboRpcService {
     protected void runPlan1() {
         Frame frame;
         Image image;
-        objectDetector = new VanillaObjectDetector(this);
+        objectDetector = new ORBObjectDetector(this);
 
         // 座標系對應
         frames = new HashMap<>();
@@ -74,10 +74,11 @@ public class YourService extends KiboRpcService {
         image = Image.undistort(api);
         image.save("start.png");
 
-        round(1);
-        round(2);
-        round(3);
-        round(4);
+        List<AreaInfo> areaInfos = new ArrayList<>();
+        areaInfos.add(round(1));
+        areaInfos.add(round(2));
+        areaInfos.add(round(3));
+        areaInfos.add(round(4));
 
         /* ******************************************************************************** */
         /* Write your code to recognize the type and number of landmark items in each area! */
@@ -85,7 +86,7 @@ public class YourService extends KiboRpcService {
         /* ******************************************************************************** */
 
         // When you recognize landmark items, let’s set the type and number.
-        api.setAreaInfo(1, "item_name", 1);
+        // api.setAreaInfo(1, "item_name", 1);
 
         /* ************************************************ */
         /* Let's move to each area and recognize the items. */
@@ -137,7 +138,7 @@ public class YourService extends KiboRpcService {
         return "your method";
     }
 
-    void round(int areaId) {
+    AreaInfo round(int areaId) {
         String area = "area" + areaId;
         String axis = "axis" + areaId;
 
@@ -176,6 +177,6 @@ public class YourService extends KiboRpcService {
             Log.e("Object_Detection", "檢測過程發生錯誤: " + e.getMessage(), e);
         }
 
-        AreaInfo areaInfo = new AreaInfo(areaId, location, region, paper, arucoResult, items);
+        return new AreaInfo(areaId, location, region, paper, arucoResult, items);
     }
 }
